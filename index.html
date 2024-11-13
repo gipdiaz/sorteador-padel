@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteador de Parejas de Tenis</title>
+    <!-- Agregar Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container my-5">
+        <h1 class="text-center mb-4">Sorteador de Parejas de Tenis</h1>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <h2 class="h5">Jugadores de Drive</h2>
+                <input type="text" id="drive1" class="form-control mb-2" placeholder="Jugador Drive 1">
+                <input type="text" id="drive2" class="form-control mb-2" placeholder="Jugador Drive 2">
+                <input type="text" id="drive3" class="form-control mb-2" placeholder="Jugador Drive 3">
+                <input type="text" id="drive4" class="form-control mb-2" placeholder="Jugador Drive 4">
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <h2 class="h5">Jugadores de Revés</h2>
+                <input type="text" id="reves1" class="form-control mb-2" placeholder="Jugador Revés 1">
+                <input type="text" id="reves2" class="form-control mb-2" placeholder="Jugador Revés 2">
+                <input type="text" id="reves3" class="form-control mb-2" placeholder="Jugador Revés 3">
+                <input type="text" id="reves4" class="form-control mb-2" placeholder="Jugador Revés 4">
+            </div>
+        </div>
+        
+        <div class="text-center mb-4">
+            <button onclick="sortear()" class="btn btn-primary">Sortear Parejas y Enfrentamientos</button>
+        </div>
+        
+        <p class="mensaje-repetido text-danger text-center mb-4"></p>
+        
+        <h2 class="h5">Parejas</h2>
+        <ul id="parejas" class="list-group mb-4"></ul>
+
+        <p class="mensaje-repetido text-danger text-center mb-4"></p>
+
+        <h2 class="h5">Enfrentamientos</h2>
+        <ul id="enfrentamientos" class="list-group"></ul>
+
+        <p class="mensaje-repetido text-danger text-center mb-4"></p>
+    </div>
+
+    <!-- Agregar Bootstrap JS y Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const HISTORIAL_KEY = "sorteosAnteriores";
+        const DIA_EN_MILISEGUNDOS = 24 * 60 * 60 * 1000;
+
+        function cargarHistorial() {
+            const historial = JSON.parse(localStorage.getItem(HISTORIAL_KEY));
+            if (historial && (Date.now() - historial.fechaGuardado) < DIA_EN_MILISEGUNDOS) {
+                return historial.datos;
+            } else {
+                localStorage.removeItem(HISTORIAL_KEY); // Borrar datos expirados
+                return {};
+            }
+        }
+
+        function guardarHistorial(historial) {
+            localStorage.setItem(HISTORIAL_KEY, JSON.stringify({
+                datos: historial,
+                fechaGuardado: Date.now()
+            }));
+        }
+
+        let sorteosAnteriores = cargarHistorial();
+
+        function mostrarMensajeRepetido(mensaje) {
+            // Seleccionar todos los elementos con la clase 'mensaje-repetido'
+            const mensajes = document.querySelectorAll(".mensaje-repetido");
+            mensajes.forEach((elemento) => {
+                elemento.textContent = mensaje;
+            });
+        }
+
+        function sortear() {
+            let jugadoresDrive = [
+                document.getElementById("drive1").value,
+                document.getElementById("drive2").value,
+                document.getElementById("drive3").value,
+                document.getElementById("drive4").value
+            ].sort();
+
+            let jugadoresReves = [
+                document.getElementById("reves1").value,
+                document.getElementById("reves2").value,
+                document.getElementById("reves3").value,
+                document.getElementById("reves4").value
+            ].sort();
+
+            const claveSorteo = `${jugadoresDrive.join('-')}-${jugadoresReves.join('-')}`;
+
+            if (sorteosAnteriores[claveSorteo]) {
+                mostrarMensajeRepetido("Ya intentaste hacer este mismo sorteo antes PEDAZO DE CORNETA, NO TE GUSTO EL RESULTADO? JAJA");
+                sorteosAnteriores[claveSorteo] += 1;
+                guardarHistorial(sorteosAnteriores);
+                return;
+            } else {
+                sorteosAnteriores[claveSorteo] = 1;
+                guardarHistorial(sorteosAnteriores);
+                mostrarMensajeRepetido(""); // Limpiar mensajes
+            }
+
+            jugadoresDrive = jugadoresDrive.sort(() => Math.random() - 0.5);
+            jugadoresReves = jugadoresReves.sort(() => Math.random() - 0.5);
+
+            let parejas = [];
+            for (let i = 0; i < 4; i++) {
+                parejas.push(`${jugadoresDrive[i]} y ${jugadoresReves[i]}`);
+            }
+
+            const parejasList = document.getElementById("parejas");
+            parejasList.innerHTML = "";
+            parejas.forEach((pareja, index) => {
+                let listItem = document.createElement("li");
+                listItem.className = "list-group-item";
+                listItem.textContent = `Pareja ${index + 1}: ${pareja}`;
+                parejasList.appendChild(listItem);
+            });
+
+            let enfrentamientos = [];
+            let shuffledParejas = [...parejas].sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < shuffledParejas.length; i += 2) {
+                if (i + 1 < shuffledParejas.length) {
+                    enfrentamientos.push(`${shuffledParejas[i]} vs ${shuffledParejas[i + 1]}`);
+                }
+            }
+
+            const enfrentamientosList = document.getElementById("enfrentamientos");
+            enfrentamientosList.innerHTML = "";
+            enfrentamientos.forEach((enfrentamiento, index) => {
+                let listItem = document.createElement("li");
+                listItem.className = "list-group-item";
+                listItem.textContent = `Juego ${index + 1}: ${enfrentamiento}`;
+                enfrentamientosList.appendChild(listItem);
+            });
+        }
+    </script>
+</body>
+</html>
