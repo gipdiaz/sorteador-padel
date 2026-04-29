@@ -6,36 +6,101 @@
     <title>Sorteador de Parejas de Padel</title>
     <!-- Agregar Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <style>
+        #landingPage {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .landing-card {
+            max-width: 520px;
+            width: 100%;
+        }
+        .btn-google {
+            background-color: #fff;
+            border: 1px solid #dadce0;
+            color: #3c4043;
+            font-weight: 500;
+            transition: box-shadow 0.2s, background-color 0.2s;
+        }
+        .btn-google:hover {
+            background-color: #f7f8f8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+    </style>
 </head>
 <body class="bg-light">
-    <div class="container my-5">
-        <h1 class="text-center mb-4">Sorteador de Parejas de Padel</h1>
+
+    <!-- ========== LANDING PAGE (sin sesión) ========== -->
+    <div id="landingPage" style="display: none;">
+        <div class="landing-card text-center px-4">
+            <img src="images/home.png" alt="Padel" class="img-fluid rounded-4 shadow-lg mb-4" style="max-height: 360px;">
+            <h1 class="fw-bold mb-2">Sorteador de Padel</h1>
+            <p class="text-muted mb-4">Armá las parejas y los enfrentamientos al azar para el americano de padel</p>
+            <button onclick="iniciarSesion()" class="btn btn-google btn-lg d-inline-flex align-items-center gap-2 px-4 py-2">
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                Iniciar sesión con Google
+            </button>
+            <p class="text-muted small mt-4">Iniciá sesión para crear y compartir sorteos</p>
+        </div>
+    </div>
+
+    <!-- ========== CONTENIDO PRINCIPAL (con sesión) ========== -->
+    <div id="mainContent" class="container my-5" style="display: none;">
+        <!-- Header con título y perfil de usuario -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Sorteador de Padel</h1>
+
+            <!-- Perfil de usuario -->
+            <div id="userProfile" class="d-flex align-items-center">
+                <img id="userPhoto" src="" alt="Foto de perfil" class="rounded-circle me-2" style="width: 40px; height: 40px;">
+                <span id="userName" class="me-3"></span>
+                <button class="btn btn-sm btn-outline-secondary" onclick="cerrarSesion()">Cerrar sesión</button>
+            </div>
+        </div>
 
         <div class="row">
             <div class="col-6 col-md-6 mb-3">
                 <h2 class="h5">Jugadores de Drive</h2>
-                <input type="text" id="drive1" class="form-control mb-2" placeholder="Jugador Drive 1">
-                <input type="text" id="drive2" class="form-control mb-2" placeholder="Jugador Drive 2">
-                <input type="text" id="drive3" class="form-control mb-2" placeholder="Jugador Drive 3">
-                <input type="text" id="drive4" class="form-control mb-2" placeholder="Jugador Drive 4">
+                <input type="text" id="drive1" class="form-control mb-2" placeholder="Jugador Drive 1" list="jugadoresList">
+                <input type="text" id="drive2" class="form-control mb-2" placeholder="Jugador Drive 2" list="jugadoresList">
+                <input type="text" id="drive3" class="form-control mb-2" placeholder="Jugador Drive 3" list="jugadoresList">
+                <input type="text" id="drive4" class="form-control mb-2" placeholder="Jugador Drive 4" list="jugadoresList">
             </div>
-            
+
             <div class="col-6 col-md-6 mb-3">
                 <h2 class="h5">Jugadores de Revés</h2>
-                <input type="text" id="reves1" class="form-control mb-2" placeholder="Jugador Revés 1">
-                <input type="text" id="reves2" class="form-control mb-2" placeholder="Jugador Revés 2">
-                <input type="text" id="reves3" class="form-control mb-2" placeholder="Jugador Revés 3">
-                <input type="text" id="reves4" class="form-control mb-2" placeholder="Jugador Revés 4">
+                <input type="text" id="reves1" class="form-control mb-2" placeholder="Jugador Revés 1" list="jugadoresList">
+                <input type="text" id="reves2" class="form-control mb-2" placeholder="Jugador Revés 2" list="jugadoresList">
+                <input type="text" id="reves3" class="form-control mb-2" placeholder="Jugador Revés 3" list="jugadoresList">
+                <input type="text" id="reves4" class="form-control mb-2" placeholder="Jugador Revés 4" list="jugadoresList">
             </div>
         </div>
-        
-        
+
+        <!-- Datalist para autocompletado de jugadores -->
+        <datalist id="jugadoresList"></datalist>
+
+
         <div class="text-center mb-4">
             <button onclick="sortear()" class="btn btn-primary">Sortear Parejas y Enfrentamientos</button>
         </div>
-        
+
+        <p id="ownerNotice" class="text-info text-center fw-bold mb-4"></p>
+
         <p class="mensaje-repetido text-danger text-center mb-4"></p>
-        
+
         <h2 class="h5">Parejas</h2>
         <ul id="parejas" class="list-group mb-4"></ul>
 
@@ -45,69 +110,212 @@
         <ul id="enfrentamientos" class="list-group"></ul>
 
         <p class="mensaje-repetido text-danger text-center mb-4"></p>
+
+        <!-- Botón para compartir sorteo -->
+        <div id="shareContainer" class="text-center mt-4" style="display: none;">
+            <button onclick="compartirSorteo()" class="btn btn-success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-share me-2" viewBox="0 0 16 16">
+                    <path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5zm-8.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm11 5.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
+                </svg>
+                Compartir Sorteo
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para mostrar link de compartir -->
+    <div class="modal fade" id="shareModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Compartir Sorteo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Comparte este link para que otros vean el sorteo:</p>
+                    <div class="input-group">
+                        <input type="text" id="shareLink" class="form-control" readonly>
+                        <button class="btn btn-outline-secondary" onclick="copiarLink()">Copiar</button>
+                    </div>
+                    <small id="copyMessage" class="text-success" style="display: none;">¡Link copiado!</small>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Agregar Bootstrap JS y Popper.js -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const HISTORIAL_KEY = "sorteosAnteriores";
+        // ========== CONFIGURACIÓN DE FIREBASE ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyAn3qHucOn9Qjzae2XIt0OnbGirbgPBvRg",
+            authDomain: "sorteador-padel.firebaseapp.com",
+            databaseURL: "https://sorteador-padel-default-rtdb.firebaseio.com",
+            projectId: "sorteador-padel",
+            storageBucket: "sorteador-padel.firebasestorage.app",
+            messagingSenderId: "762365834885",
+            appId: "1:762365834885:web:5eef5df532f45115f59bec"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // ========== VARIABLES GLOBALES ==========
         const DIA_EN_MILISEGUNDOS = 24 * 60 * 60 * 1000;
+        let currentUser = null;
+        let sorteosAnteriores = {};
+        let ultimoSorteoId = null;
 
-        function cargarHistorial() {
-            const historial = JSON.parse(localStorage.getItem(HISTORIAL_KEY));
-            if (historial && (Date.now() - historial.fechaGuardado) < DIA_EN_MILISEGUNDOS) {
-                return historial.datos;
+        // ========== GESTIÓN DE AUTENTICACIÓN ==========
+
+        // Detectar cambios en el estado de autenticación
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById("landingPage").style.display = "none";
+                document.getElementById("mainContent").style.display = "block";
+                mostrarPerfil(user);
+                cargarDatosUsuario(user.uid);
+                verificarSorteoCompartido();
             } else {
-                localStorage.removeItem(HISTORIAL_KEY); // Borrar datos expirados
-                return {};
+                currentUser = null;
+                document.getElementById("landingPage").style.display = "flex";
+                document.getElementById("mainContent").style.display = "none";
+                verificarSorteoCompartido();
             }
+        });
+
+        function iniciarSesion() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    console.log("Usuario autenticado:", result.user);
+                })
+                .catch((error) => {
+                    console.error("Error en autenticación:", error);
+                    alert("Error al iniciar sesión: " + error.message);
+                });
         }
 
-        function guardarHistorial(historial) {
-            localStorage.setItem(HISTORIAL_KEY, JSON.stringify({
-                datos: historial,
-                fechaGuardado: Date.now()
-            }));
+        function cerrarSesion() {
+            auth.signOut()
+                .then(() => {
+                    console.log("Sesión cerrada");
+                    limpiarUI();
+                })
+                .catch((error) => {
+                    console.error("Error al cerrar sesión:", error);
+                });
         }
 
-        let sorteosAnteriores = cargarHistorial();
+        function mostrarPerfil(user) {
+            document.getElementById("userName").textContent = user.displayName;
+            document.getElementById("userPhoto").src = user.photoURL;
+        }
+
+        function limpiarUI() {
+            document.getElementById("parejas").innerHTML = "";
+            document.getElementById("enfrentamientos").innerHTML = "";
+            document.getElementById("shareContainer").style.display = "none";
+            mostrarMensajeRepetido("");
+        }
+
+        // ========== CARGAR DATOS DEL USUARIO ==========
+
+        function cargarDatosUsuario(userId) {
+            // Cargar jugadores previos para autocompletado
+            database.ref(`users/${userId}/players`).once('value', (snapshot) => {
+                const players = snapshot.val() || [];
+                actualizarAutocompletado(players);
+            });
+
+            // Cargar historial del día
+            database.ref(`users/${userId}/historialDia`).once('value', (snapshot) => {
+                const historial = snapshot.val() || {};
+                // Filtrar solo sorteos de las últimas 24 horas
+                const ahora = Date.now();
+                sorteosAnteriores = {};
+                Object.keys(historial).forEach(key => {
+                    if (historial[key].timestamp && (ahora - historial[key].timestamp) < DIA_EN_MILISEGUNDOS) {
+                        sorteosAnteriores[key] = historial[key].count;
+                    }
+                });
+            });
+        }
+
+        function actualizarAutocompletado(players) {
+            const datalist = document.getElementById("jugadoresList");
+            datalist.innerHTML = "";
+            players.forEach(player => {
+                const option = document.createElement("option");
+                option.value = player;
+                datalist.appendChild(option);
+            });
+        }
+
+        // ========== FUNCIONES AUXILIARES ==========
 
         function mostrarMensajeRepetido(mensaje) {
-            // Seleccionar todos los elementos con la clase 'mensaje-repetido'
             const mensajes = document.querySelectorAll(".mensaje-repetido");
             mensajes.forEach((elemento) => {
                 elemento.textContent = mensaje;
             });
         }
 
+        // ========== FUNCIÓN PRINCIPAL: SORTEAR ==========
+
         function sortear() {
+            if (!currentUser) {
+                alert("Debes iniciar sesión con Google para hacer un sorteo");
+                return;
+            }
+
             let jugadoresDrive = [
-                document.getElementById("drive1").value,
-                document.getElementById("drive2").value,
-                document.getElementById("drive3").value,
-                document.getElementById("drive4").value
-            ].sort();
+                document.getElementById("drive1").value.trim(),
+                document.getElementById("drive2").value.trim(),
+                document.getElementById("drive3").value.trim(),
+                document.getElementById("drive4").value.trim()
+            ];
 
             let jugadoresReves = [
-                document.getElementById("reves1").value,
-                document.getElementById("reves2").value,
-                document.getElementById("reves3").value,
-                document.getElementById("reves4").value
-            ].sort();
+                document.getElementById("reves1").value.trim(),
+                document.getElementById("reves2").value.trim(),
+                document.getElementById("reves3").value.trim(),
+                document.getElementById("reves4").value.trim()
+            ];
 
-            const claveSorteo = `${jugadoresDrive.join('-')}-${jugadoresReves.join('-')}`;
+            if (jugadoresDrive.some(j => !j) || jugadoresReves.some(j => !j)) {
+                alert("Por favor, completa todos los campos de jugadores");
+                return;
+            }
+
+            const jugadoresDriveSorted = [...jugadoresDrive].sort();
+            const jugadoresRevesSorted = [...jugadoresReves].sort();
+            const claveSorteo = `${jugadoresDriveSorted.join('-')}-${jugadoresRevesSorted.join('-')}`;
 
             if (sorteosAnteriores[claveSorteo]) {
                 mostrarMensajeRepetido("Ya intentaste hacer este mismo sorteo antes PEDAZO DE CORNETA, NO TE GUSTO EL RESULTADO? JAJA");
                 sorteosAnteriores[claveSorteo] += 1;
-                guardarHistorial(sorteosAnteriores);
+
+                database.ref(`users/${currentUser.uid}/historialDia/${claveSorteo}`).update({
+                    count: sorteosAnteriores[claveSorteo],
+                    timestamp: Date.now()
+                });
                 return;
             } else {
                 sorteosAnteriores[claveSorteo] = 1;
-                guardarHistorial(sorteosAnteriores);
-                mostrarMensajeRepetido(""); // Limpiar mensajes
+
+                database.ref(`users/${currentUser.uid}/historialDia/${claveSorteo}`).set({
+                    count: 1,
+                    timestamp: Date.now()
+                });
+
+                mostrarMensajeRepetido("");
             }
+
+            guardarJugadoresParaAutocompletado([...jugadoresDrive, ...jugadoresReves]);
 
             jugadoresDrive = jugadoresDrive.sort(() => Math.random() - 0.5);
             jugadoresReves = jugadoresReves.sort(() => Math.random() - 0.5);
@@ -143,6 +351,144 @@
                 listItem.textContent = `Juego ${index + 1}: ${enfrentamiento}`;
                 enfrentamientosList.appendChild(listItem);
             });
+
+            document.getElementById("shareContainer").style.display = "block";
+
+            ultimoSorteoId = {
+                jugadoresDrive: jugadoresDriveSorted,
+                jugadoresReves: jugadoresRevesSorted,
+                parejas: parejas,
+                enfrentamientos: enfrentamientos
+            };
+        }
+
+        function guardarJugadoresParaAutocompletado(nuevosJugadores) {
+            database.ref(`users/${currentUser.uid}/players`).once('value', (snapshot) => {
+                const playersActuales = snapshot.val() || [];
+                const playersSet = new Set([...playersActuales, ...nuevosJugadores]);
+                const playersUnicos = Array.from(playersSet).filter(p => p.trim() !== '');
+
+                database.ref(`users/${currentUser.uid}/players`).set(playersUnicos);
+                actualizarAutocompletado(playersUnicos);
+            });
+        }
+
+        // ========== COMPARTIR SORTEOS ==========
+
+        function compartirSorteo() {
+            if (!ultimoSorteoId) {
+                alert("No hay ningún sorteo para compartir");
+                return;
+            }
+
+            const sorteoId = database.ref('sorteos').push().key;
+
+            const sorteoData = {
+                owner: currentUser.uid,
+                ownerName: currentUser.displayName,
+                jugadoresDrive: ultimoSorteoId.jugadoresDrive,
+                jugadoresReves: ultimoSorteoId.jugadoresReves,
+                parejas: ultimoSorteoId.parejas,
+                enfrentamientos: ultimoSorteoId.enfrentamientos,
+                created: Date.now()
+            };
+
+            database.ref(`sorteos/${sorteoId}`).set(sorteoData)
+                .then(() => {
+                    const link = `${window.location.origin}${window.location.pathname}?sorteo=${sorteoId}`;
+                    document.getElementById("shareLink").value = link;
+
+                    const modal = new bootstrap.Modal(document.getElementById('shareModal'));
+                    modal.show();
+                })
+                .catch((error) => {
+                    console.error("Error al compartir sorteo:", error);
+                    alert("Error al compartir sorteo: " + error.message);
+                });
+        }
+
+        function copiarLink() {
+            const linkInput = document.getElementById("shareLink");
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999);
+
+            try {
+                navigator.clipboard.writeText(linkInput.value);
+                document.getElementById("copyMessage").style.display = "block";
+                setTimeout(() => {
+                    document.getElementById("copyMessage").style.display = "none";
+                }, 2000);
+            } catch (err) {
+                document.execCommand("copy");
+                document.getElementById("copyMessage").style.display = "block";
+                setTimeout(() => {
+                    document.getElementById("copyMessage").style.display = "none";
+                }, 2000);
+            }
+        }
+
+        // ========== VER SORTEO COMPARTIDO ==========
+
+        function verificarSorteoCompartido() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sorteoId = urlParams.get('sorteo');
+
+            if (sorteoId) {
+                cargarSorteoCompartido(sorteoId);
+            }
+        }
+
+        function cargarSorteoCompartido(sorteoId) {
+            database.ref(`sorteos/${sorteoId}`).once('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const sorteo = snapshot.val();
+                    mostrarSorteoCompartido(sorteo);
+                } else {
+                    alert("Este sorteo no existe o ha sido eliminado");
+                }
+            });
+        }
+
+        function mostrarSorteoCompartido(sorteo) {
+            // Ocultar landing y mostrar contenido
+            document.getElementById("landingPage").style.display = "none";
+            document.getElementById("mainContent").style.display = "block";
+
+            // Ocultar inputs y botón de sortear
+            document.querySelectorAll('input[type="text"]').forEach(input => {
+                input.style.display = "none";
+            });
+            document.querySelector('button[onclick="sortear()"]').style.display = "none";
+            document.querySelector('.row').style.display = "none";
+            document.getElementById("userProfile").classList.add("d-none");
+
+            document.getElementById("ownerNotice").textContent = `Sorteo compartido por ${sorteo.ownerName}`;
+
+            const parejasList = document.getElementById("parejas");
+            parejasList.innerHTML = "";
+            sorteo.parejas.forEach((pareja, index) => {
+                let listItem = document.createElement("li");
+                listItem.className = "list-group-item";
+                listItem.textContent = `Pareja ${index + 1}: ${pareja}`;
+                parejasList.appendChild(listItem);
+            });
+
+            const enfrentamientosList = document.getElementById("enfrentamientos");
+            enfrentamientosList.innerHTML = "";
+            sorteo.enfrentamientos.forEach((enfrentamiento, index) => {
+                let listItem = document.createElement("li");
+                listItem.className = "list-group-item";
+                listItem.textContent = `Juego ${index + 1}: ${enfrentamiento}`;
+                enfrentamientosList.appendChild(listItem);
+            });
+
+            const shareContainer = document.getElementById("shareContainer");
+            shareContainer.style.display = "block";
+            shareContainer.innerHTML = `
+                <a href="${window.location.origin}${window.location.pathname}" class="btn btn-primary">
+                    Crear mi propio sorteo
+                </a>
+            `;
         }
     </script>
 </body>
