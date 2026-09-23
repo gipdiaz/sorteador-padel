@@ -264,6 +264,16 @@
             });
         }
 
+        // Mezcla Fisher–Yates: todas las permutaciones son igual de probables
+        function mezclar(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
         // ========== FUNCIÓN PRINCIPAL: SORTEAR ==========
 
         function sortear() {
@@ -317,8 +327,8 @@
 
             guardarJugadoresParaAutocompletado([...jugadoresDrive, ...jugadoresReves]);
 
-            jugadoresDrive = jugadoresDrive.sort(() => Math.random() - 0.5);
-            jugadoresReves = jugadoresReves.sort(() => Math.random() - 0.5);
+            jugadoresDrive = mezclar(jugadoresDrive);
+            jugadoresReves = mezclar(jugadoresReves);
 
             let parejas = [];
             for (let i = 0; i < 4; i++) {
@@ -335,7 +345,7 @@
             });
 
             let enfrentamientos = [];
-            let shuffledParejas = [...parejas].sort(() => Math.random() - 0.5);
+            let shuffledParejas = mezclar(parejas);
 
             for (let i = 0; i < shuffledParejas.length; i += 2) {
                 if (i + 1 < shuffledParejas.length) {
